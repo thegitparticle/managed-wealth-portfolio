@@ -1,10 +1,9 @@
 const http = require('http')
 const fs = require('fs')
 const path = require('path')
-const url = require('url')
 
 const port = process.env.PORT ? Number(process.env.PORT) : 5173
-const rootDir = __dirname
+const rootDir = path.join(__dirname, 'public')
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -22,15 +21,35 @@ const server = http.createServer((req, res) => {
     return
   }
 
-  const { pathname } = url.parse(req.url)
+  const { pathname } = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
 
   if (pathname === '/api/random') {
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Cache-Control': 'no-store',
+      'Content-Type': 'application/json; charset=utf-8',
+    }
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, headers)
+      res.end()
+      return
+    }
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, headers)
+      res.end(JSON.stringify({ error: 'Method not allowed' }))
+      return
+    }
+
     const payload = {
       value: Math.floor(Math.random() * 1000),
       generatedAt: new Date().toISOString(),
     }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-    res.end(JSON.stringify(payload))
+    res.writeHead(200, headers)
+    res.end(req.method === 'HEAD' ? undefined : JSON.stringify(payload))
     return
   }
 

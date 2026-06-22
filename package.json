@@ -3,6 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "node dev-server.js",
-    "start": "node dev-server.js"
+    "start": "node dev-server.js",
+    "preview": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
