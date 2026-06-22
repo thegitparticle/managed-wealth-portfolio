@@ -65,7 +65,6 @@ function App() {
 
   return html`
     <div className="page">
-      <div className="scanline" aria-hidden="true"></div>
       <${Header} page=${page} navigate=${navigate} showNav=${showNav} deposit=${deposit} />
       <main className="container">
         ${page === 'landing' && html`<${LandingPage} onContinue=${() => setPage('deposit')} />`}
@@ -87,8 +86,8 @@ function Header({ page, navigate, showNav, deposit }) {
     <header className="header">
       <div className="container header-inner">
         <div className="brand" onClick=${() => showNav && navigate('dashboard')} style=${{ cursor: showNav ? 'pointer' : 'default' }}>
-          <h1>Yield Portal</h1>
-          <span className="muted mono">Managed Crypto Yield</span>
+          <h1>Manage Wealth</h1>
+          <span className="muted mono">by Fere</span>
         </div>
         <div className="controls">
           ${showNav && html`
@@ -110,7 +109,7 @@ function Footer() {
   return html`
     <footer className="footer">
       <div className="container">
-        <p className="muted mono">Managed Crypto Yield Portal \u00B7 Demo Mode \u00B7 All data is simulated</p>
+        <p className="muted mono">Manage Wealth by Fere \u00B7 Demo Mode \u00B7 All data is simulated</p>
       </div>
     </footer>
   `

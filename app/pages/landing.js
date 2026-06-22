@@ -4,7 +4,7 @@ export function LandingPage({ onContinue }) {
   return html`
     <div className="landing-page">
       <div className="landing-hero">
-        <div className="landing-eyebrow mono">MANAGED CRYPTO YIELD</div>
+        <div className="landing-eyebrow mono">MANAGE WEALTH BY FERE</div>
         <h1 className="landing-title">Deposit dollars.<br />Pick your risk.<br />Let the system earn.</h1>
         <p className="landing-subtitle">
           A single-deposit, AI-allocated portal. Your capital is routed across diversified strategy baskets — you steer with a risk dial, the system handles everything else.
