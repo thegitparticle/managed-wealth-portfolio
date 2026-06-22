@@ -1,5 +1,5 @@
 {
-  "name": "dashboard-boilerplate",
+  "name": "managed-wealth-portfolio",
   "private": true,
   "scripts": {
     "dev": "node dev-server.js",
