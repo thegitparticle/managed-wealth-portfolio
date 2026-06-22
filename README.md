@@ -11,6 +11,7 @@ The deployment shape is intentionally narrow:
 - `src/worker.ts` is the single Worker entrypoint.
 - `public/` contains the only static files uploaded by Wrangler.
 - `wrangler.jsonc` sets `assets.directory` to `./public`, preventing Wrangler from uploading the repository root or `node_modules/` as static assets.
+- `assets.not_found_handling` is set to `single-page-application`, so direct browser requests for client-side routes still return `public/index.html`.
 - `npm run deploy` runs `wrangler deploy`.
 
 ## Commands
@@ -20,6 +21,8 @@ npm run dev
 ```
 
 Starts the local Node dev server. It serves static files from `public/` and exposes a local `/api/random` endpoint for development.
+
+For Cloudflare, configure the build/deploy command as `npm run deploy`. Do not use `wrangler pages deploy` for this repository.
 
 ```bash
 npm run preview
@@ -35,7 +38,7 @@ Deploys the Worker and `public/` static assets with Wrangler.
 
 ## Runtime random API
 
-The Worker handles `GET /api/random` and returns a JSON payload with a random value and generation timestamp.
+The Worker handles `GET /api/random` and `HEAD /api/random`, responds to CORS preflight `OPTIONS /api/random`, and returns a JSON payload with a random value and generation timestamp for GET requests.
 
 The dashboard demonstrates both:
 

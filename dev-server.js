@@ -24,12 +24,32 @@ const server = http.createServer((req, res) => {
   const { pathname } = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
 
   if (pathname === '/api/random') {
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Cache-Control': 'no-store',
+      'Content-Type': 'application/json; charset=utf-8',
+    }
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, headers)
+      res.end()
+      return
+    }
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, headers)
+      res.end(JSON.stringify({ error: 'Method not allowed' }))
+      return
+    }
+
     const payload = {
       value: Math.floor(Math.random() * 1000),
       generatedAt: new Date().toISOString(),
     }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
-    res.end(JSON.stringify(payload))
+    res.writeHead(200, headers)
+    res.end(req.method === 'HEAD' ? undefined : JSON.stringify(payload))
     return
   }
 
