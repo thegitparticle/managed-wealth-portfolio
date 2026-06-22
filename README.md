@@ -1,24 +1,49 @@
-# dashboard-boilerplate
+# managed-wealth-portfolio
 
-This repo is a dashboard boilerplate demonstrating a Cloudflare Pages Functions backend paired with a lightweight React UI that runs without a build step.
+A lightweight dashboard UI with a Cloudflare Worker API endpoint and static assets served from `public/`.
 
-## Demo: Runtime random API
+## Deployment model
 
-A small Cloudflare Pages Function at `functions/random.ts` returns a runtime JSON payload with a random value. The dashboard demonstrates both:
+This project deploys as a **Cloudflare Worker with static assets**, not as a classic Cloudflare Pages Functions project.
 
-- A **build-time** random value generated in the client at startup (static for the session).
-- A **runtime** random value fetched from the server (`/api/random`) on each page load or on demand.
+The deployment shape is intentionally narrow:
 
-## Local development
+- `src/worker.ts` is the single Worker entrypoint.
+- `public/` contains the only static files uploaded by Wrangler.
+- `wrangler.jsonc` sets `assets.directory` to `./public`, preventing Wrangler from uploading the repository root or `node_modules/` as static assets.
+- `npm run deploy` runs `wrangler deploy`.
+
+## Commands
 
 ```bash
 npm run dev
 ```
 
-This starts a tiny Node server (`dev-server.js`) that serves the static frontend and a local `/api/random` endpoint so you can test the runtime tile without Cloudflare Pages.
+Starts the local Node dev server. It serves static files from `public/` and exposes a local `/api/random` endpoint for development.
 
-## Production deployment (Cloudflare Pages)
+```bash
+npm run preview
+```
 
-Cloudflare Pages will serve the frontend files and the `functions/` directory. When deployed, `/api/random` is handled by the Pages Function in `functions/random.ts`.
+Runs the Worker locally through Wrangler.
 
-Styling: added orange/green brand tints, dark-mode support and a compact/dense UI toggle for an industrial, information-dense look.
+```bash
+npm run deploy
+```
+
+Deploys the Worker and `public/` static assets with Wrangler.
+
+## Runtime random API
+
+The Worker handles `GET /api/random` and returns a JSON payload with a random value and generation timestamp.
+
+The dashboard demonstrates both:
+
+- A **build-time** random value generated in the client at startup (static for the session).
+- A **runtime** random value fetched from the server (`/api/random`) on each page load or on demand.
+
+## Static frontend files
+
+The browser entrypoint is `public/index.html`. It loads the stylesheet from `/app/styles/app.css` and the JavaScript module from `/app/main.js`.
+
+Styling includes orange/green brand tints, dark-mode support, and a compact/dense UI toggle for an industrial, information-dense look.
