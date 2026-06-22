@@ -12,7 +12,7 @@ export function RiskSettingsPage({ state, navigate, onApply }) {
 
   const currentApy = computeProjectedAPY(state.tierId, state.excludedCategories)
   const newApy = computeProjectedAPY(newTier, newExcluded)
-  const hasChanges = newTier !== state.tierId || JSON.stringify(newExcluded.sort()) !== JSON.stringify([...state.excludedCategories].sort())
+  const hasChanges = newTier !== state.tierId || JSON.stringify([...newExcluded].sort()) !== JSON.stringify([...state.excludedCategories].sort())
 
   const currentAlloc = getEffectiveAllocation(state.tierId, state.excludedCategories)
   const newAlloc = getEffectiveAllocation(newTier, newExcluded)

@@ -390,11 +390,16 @@ export function LineChart({ data, width, height, color }) {
     const lineColor = color || (isDark ? '#fb923c' : '#ea580c')
 
     ctx.beginPath()
+    let lastY = 0
     for (let i = 0; i < data.length; i++) {
       const x = pad.left + (i / (data.length - 1)) * pW
       const y = pad.top + pH - ((data[i].value - minV) / range) * pH
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+      if (i === 0) { ctx.moveTo(x, y); lastY = y }
+      else {
+        ctx.lineTo(x, lastY)
+        ctx.lineTo(x, y)
+        lastY = y
+      }
     }
     ctx.strokeStyle = lineColor
     ctx.lineWidth = 1.5
