@@ -32,33 +32,6 @@ function svg(attrs = {}, inner) {
   />`
 }
 
-// --- Status bar (time + signal/wifi/battery) ---
-export function StatusBar() {
-  const [time, setTime] = useState(() => clock())
-  useEffect(() => {
-    const t = setInterval(() => setTime(clock()), 15000)
-    return () => clearInterval(t)
-  }, [])
-  return html`
-    <div className="m-statusbar">
-      <span className="m-statusbar-time">${time}</span>
-      <span className="m-statusbar-icons">
-        <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l-1.3 1.4A6.7 6.7 0 0 0 8 4.1 6.7 6.7 0 0 0 3.3 6L2 4.6A8.6 8.6 0 0 1 8 2.2Zm0 3.4c1.4 0 2.6.5 3.5 1.4l-1.3 1.4A2.9 2.9 0 0 0 8 7.5c-.8 0-1.6.3-2.2.9L4.5 7A4.8 4.8 0 0 1 8 5.6Zm0 3.3 1.4 1.5L8 11.3 6.6 9.9 8 8.9Z"/></svg>
-        <span className="m-battery"><span className="m-battery-shell"><span className="m-battery-fill"></span></span><span className="m-battery-cap"></span></span>
-      </span>
-    </div>
-  `
-}
-
-function clock() {
-  const d = new Date()
-  let h = d.getHours()
-  const m = d.getMinutes().toString().padStart(2, '0')
-  h = h % 12 || 12
-  return `${h}:${m}`
-}
-
 // --- Nav bar with large title ---
 export function NavBar({ title, large = true, onBack, right }) {
   return html`
