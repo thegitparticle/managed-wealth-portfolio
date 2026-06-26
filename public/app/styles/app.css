@@ -1185,3 +1185,119 @@ html:not(.dark) .card::before {
   .landing-title { font-size: 1.5rem; }
   .header-nav { display: none; }
 }
+
+/* ========================================
+   Device chooser (root)
+   ======================================== */
+.footer-switch {
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--muted);
+  font-size: 0.7rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.15s;
+}
+.footer-switch:hover { color: var(--brand-orange); border-color: var(--brand-orange); }
+
+.device-chooser {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding: 24px;
+}
+.device-chooser-inner { width: min(680px, 100%); text-align: center; }
+.device-brand h1 {
+  margin: 0;
+  color: var(--brand-orange);
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  font-style: italic;
+}
+.device-brand span { font-size: 0.8rem; }
+.device-prompt {
+  margin: 28px 0 24px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.device-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 520px) { .device-options { grid-template-columns: 1fr; } }
+.device-option {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 32px 20px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s;
+  font-family: var(--font-sans);
+  color: var(--text);
+}
+.device-option:hover {
+  border-color: var(--brand-orange);
+  transform: translateY(-2px);
+  background: var(--surface-hover);
+}
+.device-icon {
+  height: 90px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: var(--brand-orange);
+}
+.device-phone {
+  width: 48px;
+  height: 88px;
+  border: 2.5px solid currentColor;
+  border-radius: 12px;
+  position: relative;
+}
+.device-phone-notch {
+  position: absolute;
+  top: 6px; left: 50%;
+  transform: translateX(-50%);
+  width: 16px; height: 3px;
+  background: currentColor;
+  border-radius: 2px;
+}
+.device-monitor {
+  width: 96px;
+  height: 64px;
+  border: 2.5px solid currentColor;
+  border-radius: 6px;
+}
+.device-stand {
+  width: 28px;
+  height: 8px;
+  border: 2.5px solid currentColor;
+  border-top: none;
+  margin: 0 auto;
+  border-radius: 0 0 4px 4px;
+}
+.device-option-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.device-option-sub { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
+.device-note { margin-top: 28px; font-size: 0.7rem; }

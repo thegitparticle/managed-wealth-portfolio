@@ -2,6 +2,7 @@ import { React, html, useState, useEffect, useCallback } from './lib.js'
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client'
 import { TIERS } from './mock-data.js'
 
+import { MobileApp } from './mobile/mobile-app.js'
 import { LandingPage } from './pages/landing.js'
 import { DepositPage } from './pages/deposit.js'
 import { RiskTierPage } from './pages/risk-tier.js'
@@ -11,7 +12,7 @@ import { ManageFundsPage } from './pages/manage-funds.js'
 import { RiskSettingsPage } from './pages/risk-settings.js'
 import { ActivityPage } from './pages/activity.js'
 
-function App() {
+function DesktopApp({ onSwitchDevice }) {
   const [page, setPage] = useState('landing')
   const [deposit, setDeposit] = useState(0)
   const [stablecoin, setStablecoin] = useState('USDC')
@@ -76,7 +77,7 @@ function App() {
         ${page === 'risk-settings' && html`<${RiskSettingsPage} state=${state} navigate=${navigate} onApply=${handleRiskApply} />`}
         ${page === 'activity' && html`<${ActivityPage} state=${state} navigate=${navigate} />`}
       </main>
-      <${Footer} />
+      <${Footer} onSwitchDevice=${onSwitchDevice} />
     </div>
   `
 }
@@ -105,11 +106,14 @@ function Header({ page, navigate, showNav, deposit }) {
   `
 }
 
-function Footer() {
+function Footer({ onSwitchDevice }) {
   return html`
     <footer className="footer">
       <div className="container">
         <p className="muted mono">Manage Wealth by Fere \u00B7 Demo Mode \u00B7 All data is simulated</p>
+        ${onSwitchDevice && html`
+          <button className="footer-switch mono" onClick=${onSwitchDevice}>\u2190 Switch to mobile view</button>
+        `}
       </div>
     </footer>
   `
@@ -142,7 +146,66 @@ function ThemeToggle() {
   `
 }
 
+function DeviceChooser({ onChoose }) {
+  return html`
+    <div className="device-chooser">
+      <div className="device-chooser-inner">
+        <div className="device-brand">
+          <h1>Manage Wealth</h1>
+          <span className="muted mono">by Fere</span>
+        </div>
+        <p className="device-prompt mono">Choose how you want to view the demo</p>
+        <div className="device-options">
+          <button className="device-option" onClick=${() => onChoose('mobile')}>
+            <div className="device-icon device-icon-mobile">
+              <div className="device-phone"><span className="device-phone-notch"></span></div>
+            </div>
+            <span className="device-option-title">Mobile View</span>
+            <span className="device-option-sub mono">Native iOS app experience · recommended</span>
+          </button>
+          <button className="device-option" onClick=${() => onChoose('desktop')}>
+            <div className="device-icon device-icon-desktop">
+              <div className="device-monitor"></div>
+              <div className="device-stand"></div>
+            </div>
+            <span className="device-option-title">Desktop View</span>
+            <span className="device-option-sub mono">Full dashboard layout</span>
+          </button>
+        </div>
+        <p className="device-note mono muted">You can switch anytime · demo data is simulated</p>
+      </div>
+    </div>
+  `
+}
+
+function Root() {
+  const [device, setDevice] = useState(() => {
+    try { return localStorage.getItem('device') } catch { return null }
+  })
+
+  // Apply stored theme (default dark) on first load so the chooser matches the brand.
+  useEffect(() => {
+    let theme = 'dark'
+    try { theme = localStorage.getItem('theme') || 'dark' } catch {}
+    document.documentElement.classList.toggle('dark', theme !== 'light')
+  }, [])
+
+  const choose = useCallback((d) => {
+    try { localStorage.setItem('device', d) } catch {}
+    setDevice(d)
+  }, [])
+
+  const reset = useCallback(() => {
+    try { localStorage.removeItem('device') } catch {}
+    setDevice(null)
+  }, [])
+
+  if (!device) return html`<${DeviceChooser} onChoose=${choose} />`
+  if (device === 'mobile') return html`<${MobileApp} onSwitchDevice=${reset} />`
+  return html`<${DesktopApp} onSwitchDevice=${reset} />`
+}
+
 const rootElement = document.getElementById('app')
 if (!rootElement) throw new Error('Root element #app not found')
 const root = createRoot(rootElement)
-root.render(html`<${App} />`)
+root.render(html`<${Root} />`)
