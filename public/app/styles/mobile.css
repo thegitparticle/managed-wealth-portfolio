@@ -71,38 +71,14 @@ html:not(.dark) .m-root { background: #c7c7cc; }
 
 .m-device * { box-sizing: border-box; }
 
-/* ---------- Status bar ---------- */
-.m-statusbar {
-  flex: 0 0 auto;
-  height: 50px;
-  padding: 0 28px 0 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--mc-text);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-}
-.m-statusbar-time { font-variant-numeric: tabular-nums; }
-.m-statusbar-icons { display: flex; align-items: center; gap: 6px; }
-.m-battery { display: inline-flex; align-items: center; }
-.m-battery-shell {
-  width: 24px; height: 12px;
-  border: 1px solid var(--mc-text2);
-  border-radius: 3px;
-  padding: 1.5px;
-  display: inline-block;
-}
-.m-battery-fill { display: block; width: 70%; height: 100%; background: var(--mc-text); border-radius: 1px; }
-.m-battery-cap { width: 1.5px; height: 4px; background: var(--mc-text2); border-radius: 0 1px 1px 0; margin-left: 1px; display: inline-block; }
-
 /* ---------- Scroll region ---------- */
 .m-scroll {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  /* Clear the device's own status bar / notch; the OS draws it, not us. */
+  padding-top: max(env(safe-area-inset-top), 12px);
   padding-bottom: 24px;
 }
 .m-scroll-tabbed { padding-bottom: 96px; }
@@ -531,13 +507,6 @@ html:not(.dark) .m-seg-on { background: #fff; }
   padding: 4px 0;
 }
 .m-tab-on { color: var(--mc-accent); }
-
-/* ---------- Home indicator ---------- */
-.m-home-indicator {
-  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-  width: 134px; height: 5px; border-radius: 3px;
-  background: var(--mc-text); opacity: 0.32; z-index: 60; pointer-events: none;
-}
 
 /* Canvas charts shouldn't overflow rounded cards */
 .m-device canvas { max-width: 100%; }

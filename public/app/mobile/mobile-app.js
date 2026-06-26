@@ -1,6 +1,6 @@
 import { html, useState, useEffect, useCallback } from '../lib.js'
 import { TIERS } from '../mock-data.js'
-import { StatusBar, Icon } from './ui.js'
+import { Icon } from './ui.js'
 import { MLanding, MDeposit, MRiskTier } from './onboarding.js'
 import { MDashboard, MAllocation, MFunds, MRiskSettings, MActivity } from './screens.js'
 
@@ -48,7 +48,6 @@ export function MobileApp({ onSwitchDevice }) {
   return html`
     <div className="m-root">
     <div className="m-device">
-      <${StatusBar} />
       <div className=${`m-scroll ${showTabBar ? 'm-scroll-tabbed' : ''}`}>
         ${page === 'landing' && html`<${MLanding} onContinue=${() => navigate('deposit')} onSwitchDevice=${onSwitchDevice} />`}
         ${page === 'deposit' && html`<${MDeposit} onComplete=${onDepositComplete} />`}
@@ -70,7 +69,6 @@ export function MobileApp({ onSwitchDevice }) {
           `)}
         </nav>
       `}
-      <div className="m-home-indicator"></div>
     </div>
     </div>
   `
