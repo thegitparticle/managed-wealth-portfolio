@@ -1,5 +1,5 @@
 import { html, useState, useMemo } from '../lib.js'
-import { EstimateBadge, RiskRewardMap, DonutChart, LineChart, Loader } from '../components.js'
+import { EstimateBadge, RiskRewardMap, DonutChart, LineChart, Loader, RiskMeter, ExperimentalCard } from '../components.js'
 import {
   TIERS, CATEGORIES, CATEGORY_COLORS, formatUSD, formatPct,
   computeProjectedAPY, computeRiskLevel, computeCategoryBalances,
@@ -7,7 +7,7 @@ import {
 } from '../mock-data.js'
 
 export function DashboardPage({ state, navigate, onTierSwitch }) {
-  const { deposit, stablecoin, tierId, excludedCategories } = state
+  const { deposit, tierId } = state
   const [timeRange, setTimeRange] = useState('30d')
   const [chartExpanded, setChartExpanded] = useState(false)
   const [previewTier, setPreviewTier] = useState(null)
@@ -15,8 +15,8 @@ export function DashboardPage({ state, navigate, onTierSwitch }) {
   const [mapLayers, setMapLayers] = useState({ tiers: true, user: true, others: true, categories: true })
 
   const tier = TIERS.find(t => t.id === tierId)
-  const projectedApy = computeProjectedAPY(tierId, excludedCategories)
-  const balances = computeCategoryBalances(deposit, tierId, excludedCategories)
+  const projectedApy = computeProjectedAPY(tierId, [])
+  const balances = computeCategoryBalances(deposit, tierId, [])
   const totalNetWorth = Object.values(balances).reduce((s, v) => s + v, 0)
 
   const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
@@ -39,7 +39,7 @@ export function DashboardPage({ state, navigate, onTierSwitch }) {
       .map(c => ({ label: c.name, value: balances[c.id], color: CATEGORY_COLORS[c.id] }))
   }, [balances])
 
-  const alloc = getEffectiveAllocation(tierId, excludedCategories)
+  const alloc = getEffectiveAllocation(tierId, [])
 
   const handleTierDotClick = (clickedTierId) => {
     if (clickedTierId === tierId) return
@@ -65,29 +65,32 @@ export function DashboardPage({ state, navigate, onTierSwitch }) {
   }
 
   const previewTierObj = previewTier ? TIERS.find(t => t.id === previewTier) : null
-  const previewApy = previewTier ? computeProjectedAPY(previewTier, excludedCategories) : null
+  const previewApy = previewTier ? computeProjectedAPY(previewTier, []) : null
+  const previewRisk = previewTier ? computeRiskLevel(previewTier, []) : null
 
   return html`
     <div className="dashboard-page">
       ${previewTier && html`
         <div className="tier-preview-overlay" onClick=${() => setPreviewTier(null)}>
           <div className="tier-preview-panel card" onClick=${(e) => e.stopPropagation()}>
-            <div className="card-label mono">TIER COMPARISON</div>
+            <div className="card-label mono">SWITCH STRATEGY</div>
             <div className="tier-compare">
               <div className="tier-compare-col">
-                <span className="mono muted" style=${{ fontSize: '0.7rem' }}>CURRENT</span>
+                <span className="mono muted" style=${{ fontSize: '0.7rem' }}>NOW</span>
                 <span className="tier-compare-name">${tier.name}</span>
-                <span className="mono">${projectedApy.toFixed(1)}% APY</span>
+                <span className="mono">${projectedApy.toFixed(1)}% · ${tier.riskLabel}</span>
               </div>
-              <div className="tier-compare-arrow">\u2192</div>
+              <div className="tier-compare-arrow">→</div>
               <div className="tier-compare-col">
                 <span className="mono muted" style=${{ fontSize: '0.7rem' }}>NEW</span>
-                <span className="tier-compare-name">${previewTierObj.name}</span>
-                <span className="mono">${previewApy.toFixed(1)}% APY</span>
+                <span className="tier-compare-name" style=${{ color: previewTierObj.color }}>${previewTierObj.name}</span>
+                <span className="mono">${previewApy.toFixed(1)}% · ${previewTierObj.riskLabel}</span>
               </div>
             </div>
+            <p className="tier-preview-blurb">${previewTierObj.blurb}</p>
+            <div style=${{ margin: '4px 0 10px' }}><${RiskMeter} level=${previewRisk} /></div>
             <div className="tier-preview-delta mono">
-              Projected return shift: ${formatPct(previewApy - projectedApy)} · Risk shift: ${formatPct((computeRiskLevel(previewTier, excludedCategories) - computeRiskLevel(tierId, excludedCategories)) * 100)}
+              Potential return ${formatPct(previewApy - projectedApy)} · Risk ${tier.riskLabel} → ${previewTierObj.riskLabel}
             </div>
             <div className="tier-preview-actions">
               <button className="button" onClick=${() => setPreviewTier(null)}>Cancel</button>
@@ -113,11 +116,12 @@ export function DashboardPage({ state, navigate, onTierSwitch }) {
         </div>
         <${RiskRewardMap}
           tierId=${tierId}
-          excludedCategories=${excludedCategories}
+          excludedCategories=${[]}
           onTierClick=${handleTierDotClick}
           mode="select"
           layers=${mapLayers}
         />
+        <p className="map-hint mono muted">Tap another tier dot to preview switching.</p>
       </div>
 
       <section className="supporting-strip">
@@ -178,21 +182,21 @@ export function DashboardPage({ state, navigate, onTierSwitch }) {
 
       <section>
         <div className="section-header">
-          <h3>Active Strategy Categories</h3>
+          <h3>What you hold</h3>
         </div>
         <div className="grid category-grid">
           ${CATEGORIES.map(cat => {
-            const isExcluded = excludedCategories.includes(cat.id)
             const balance = balances[cat.id] || 0
             const pctAlloc = alloc[cat.id] || 0
+            const active = pctAlloc > 0
             return html`
-              <div key=${cat.id} className=${`card cat-card ${isExcluded ? 'cat-card-off' : ''}`}>
+              <div key=${cat.id} className=${`card cat-card ${active ? '' : 'cat-card-off'}`}>
                 <div className="cat-card-header">
                   <span className="cat-color-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
                   <span className="card-label mono">${cat.name}</span>
-                  ${isExcluded && html`<span className="off-badge mono">OFF</span>`}
+                  ${!active && html`<span className="off-badge mono">0%</span>`}
                 </div>
-                ${!isExcluded && html`
+                ${active && html`
                   <div className="cat-card-body">
                     <div className="cat-card-stat">
                       <span className="mono muted" style=${{ fontSize: '0.65rem' }}>CAPITAL</span>
@@ -215,11 +219,19 @@ export function DashboardPage({ state, navigate, onTierSwitch }) {
         </div>
       </section>
 
+      <section className="experimental-section">
+        <div className="section-header">
+          <h3>Beyond your tiers</h3>
+        </div>
+        <${ExperimentalCard} onLearnMore=${() => navigate('help')} />
+      </section>
+
       <section className="quick-actions">
         <button className="button button-green" onClick=${() => navigate('manage-funds')}>Add Funds</button>
         <button className="button" onClick=${() => navigate('manage-funds')}>Withdraw</button>
         <button className="button button-orange" onClick=${() => navigate('risk-settings')}>Adjust Risk</button>
         <button className="button" onClick=${() => navigate('activity')}>Activity</button>
+        <button className="button" onClick=${() => navigate('help')}>Help</button>
       </section>
     </div>
   `

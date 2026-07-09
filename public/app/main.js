@@ -11,16 +11,17 @@ import { DrillDownPage } from './pages/drill-down.js'
 import { ManageFundsPage } from './pages/manage-funds.js'
 import { RiskSettingsPage } from './pages/risk-settings.js'
 import { ActivityPage } from './pages/activity.js'
+import { HelpPage } from './pages/help.js'
 
 function DesktopApp({ onSwitchDevice }) {
   const [page, setPage] = useState('landing')
   const [deposit, setDeposit] = useState(0)
   const [stablecoin, setStablecoin] = useState('USDC')
-  const [tierId, setTierId] = useState(3)
+  const [tierId, setTierId] = useState(1)
   const [excludedCategories, setExcludedCategories] = useState([])
 
   const tier = TIERS.find(t => t.id === tierId)
-  const tierName = tier ? tier.name : 'Balanced'
+  const tierName = tier ? tier.name : 'Stable'
 
   const state = { deposit, stablecoin, tierId, excludedCategories, tierName }
 
@@ -76,6 +77,7 @@ function DesktopApp({ onSwitchDevice }) {
         ${page === 'manage-funds' && html`<${ManageFundsPage} state=${state} navigate=${navigate} onDeposit=${handleAddFunds} onWithdraw=${handleWithdraw} onWithdrawAll=${handleWithdrawAll} />`}
         ${page === 'risk-settings' && html`<${RiskSettingsPage} state=${state} navigate=${navigate} onApply=${handleRiskApply} />`}
         ${page === 'activity' && html`<${ActivityPage} state=${state} navigate=${navigate} />`}
+        ${page === 'help' && html`<${HelpPage} navigate=${navigate} />`}
       </main>
       <${Footer} onSwitchDevice=${onSwitchDevice} />
     </div>
@@ -97,6 +99,7 @@ function Header({ page, navigate, showNav, deposit }) {
               <button className=${`nav-btn mono ${page === 'drill-down' ? 'nav-active' : ''}`} onClick=${() => navigate('drill-down')}>Allocation</button>
               <button className=${`nav-btn mono ${page === 'manage-funds' ? 'nav-active' : ''}`} onClick=${() => navigate('manage-funds')}>Funds</button>
               <button className=${`nav-btn mono ${page === 'activity' ? 'nav-active' : ''}`} onClick=${() => navigate('activity')}>Activity</button>
+              <button className=${`nav-btn mono ${page === 'help' ? 'nav-active' : ''}`} onClick=${() => navigate('help')}>Help</button>
             </nav>
           `}
           <${ThemeToggle} />

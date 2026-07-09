@@ -1,5 +1,5 @@
 import { html, useState, useMemo } from '../lib.js'
-import { CATEGORIES, generateActivityLog, formatUSD } from '../mock-data.js'
+import { ALL_CATEGORIES, generateActivityLog, formatUSD } from '../mock-data.js'
 
 export function ActivityPage({ state, navigate }) {
   const [filterType, setFilterType] = useState('all')
@@ -23,7 +23,7 @@ export function ActivityPage({ state, navigate }) {
   }, [events, filterType, filterCategory])
 
   const typeOptions = ['all', 'deposit', 'withdrawal', 'rebalance', 'tier_change', 'trade']
-  const catOptions = ['all', ...CATEGORIES.map(c => c.id)]
+  const catOptions = ['all', ...ALL_CATEGORIES.map(c => c.id)]
 
   return html`
     <div className="activity-page">
@@ -44,7 +44,7 @@ export function ActivityPage({ state, navigate }) {
           <label className="form-label mono">Category</label>
           <select className="filter-select mono" value=${filterCategory} onChange=${(e) => setFilterCategory(e.target.value)}>
             ${catOptions.map(c => {
-              const cat = CATEGORIES.find(ca => ca.id === c)
+              const cat = ALL_CATEGORIES.find(ca => ca.id === c)
               return html`<option key=${c} value=${c}>${c === 'all' ? 'All Categories' : cat ? cat.name : c}</option>`
             })}
           </select>

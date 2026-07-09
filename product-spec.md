@@ -1,54 +1,56 @@
 # Managed Crypto Yield Portal — Product Spec
 
-A single-deposit, AI-allocated portal. The user deposits USDC/USDT, sees a dollar balance, picks a risk tier, and the system routes their capital across category sub-accounts holding ~10 internal strategy baskets. The user never touches individual strategies directly — they steer with a risk dial plus category toggles, and the system handles allocation. This spec is a one-shot product flow: every screen, component, input, and state the demo needs, with no phasing.
+A single-deposit, AI-managed portal. The user deposits USDC/USDT, sees a dollar balance, picks one of **three strategies**, and the system routes their capital across per-category sub-accounts. The user never touches individual strategies directly — they pick a strategy and the system handles allocation and rebalancing. This spec is a one-shot product flow: every screen, component, input, and state the demo needs, with no phasing.
 
 ---
 
 ## 1. Core Model
 
-**Deposit → Risk Tier → AI Allocation → Strategies (hidden).**
+**Deposit → Choose Strategy → AI Allocation → Strategies (hidden).**
 
-The user's money is held across **per-category sub-accounts**, not one pooled bucket. At any moment the user can see their **total net worth** and exactly **how much sits in each category** — the split is a first-class part of the experience, surfaced on the dashboard and drill-down. A **discrete 5-tier risk dial** sets the default allocation across these sub-accounts. The user can then **override** by toggling whole categories off (e.g. "no prediction markets"). The AI re-allocates within the constraints the user has set.
+The mental model is **"own an asset class and earn yield on top of it."** The safer the underlying asset, the lower the risk and the return. There is **no customization** — the strategy choice sets everything; there are no category on/off toggles.
 
-The five tiers, Conservative → Aggressive:
+The user's money is held across **per-category sub-accounts**, not one pooled bucket. At any moment they see their **total net worth** and exactly **how much sits in each holding** — the split is a first-class part of the experience, surfaced on the dashboard and drill-down. A **discrete 3-tier dial** sets the allocation across these sub-accounts.
 
-
-| Tier | Name           | Character                                                         | Projected APY (est.) |
-| ---- | -------------- | ----------------------------------------------------------------- | -------------------- |
-| 1    | **Preserve**   | Pure stablecoin yield only                                        | 4–8%                 |
-| 2    | **Steady**     | Yield + delta-neutral funding-rate capture                        | 7–14%                |
-| 3    | **Balanced**   | Adds spot blue-chip exposure + low-risk prediction markets        | 12–25%               |
-| 4    | **Growth**     | Heavier blue-chip + funding leverage + broader prediction markets | 20–45%               |
-| 5    | **Aggressive** | Adds macro prediction bets + complex yield (Pendle-style)         | 35%+ wide variance   |
+The three strategies, lower → higher risk:
 
 
-Strategies are grouped internally into **baskets by category**. Users see *band names and a category mix*, never the ~10 raw baskets. Categories used internally (surfaced only on drill-down as labels, not as user-selectable strategies):
+| Tier | Name          | What it is                                                                              | Est. APY |
+| ---- | ------------- | --------------------------------------------------------------------------------------- | -------- |
+| 1    | **Stable**    | Hold stablecoins, earn the best safe yield on them. Dollar value barely moves.          | 4–12%    |
+| 2    | **Blue-Chip** | Hold BTC/ETH/majors + a yield overlay that boosts returns and cushions dips.            | 8–25%    |
+| 3    | **Growth**    | The same hold-plus-yield playbook on higher-growth assets. Bigger swings, more upside.  | 20–60%   |
 
-1. **Stablecoin Yield** — lending/LP on stables
-2. **Funding-Rate / Delta-Neutral** — 4–5 perp funding strategies, market-neutral
-3. **Spot Blue-Chip** — buy-and-hold BTC/ETH/SOL with managed sizing
-4. **Prediction — Low Risk** — easy-win / arbitrage prediction-market plays
-5. **Prediction — High Risk** — macro / event bets
-6. **Complex Yield** — Pendle-style structured yield
 
-Each category contains multiple underlying strategies; the demo can show counts ("5 active strategies in Funding") without naming them.
+Capital is held in **three internal category sub-accounts**, aligned to the asset ladder. Users see category names and counts on drill-down, never the raw strategies:
+
+1. **Stablecoin Yield** — best-in-class lending/LP on stablecoins, market-neutral
+2. **Blue-Chip + Yield** — BTC/ETH/SOL held with a yield overlay (funding, staking, yield tokens)
+3. **Growth + Yield** — higher-growth assets held with the same yield-on-top approach
+
+Higher tiers hold more of the riskier asset while keeping a safer cushion beneath (Stable = 100% stablecoin; Blue-Chip = 25% stablecoin / 75% blue-chip; Growth = 10% / 30% / 60%).
+
+**Prediction Markets** are deliberately **not** part of the three managed strategies. They are surfaced separately as a **new & experimental**, opt-in sleeve at the end of the dashboard, drill-down and help — uncorrelated, early-access, and never touching the tier balances.
+
+Each category contains multiple underlying strategies; the demo shows counts ("6 active strategies in Blue-Chip") without naming them.
 
 ---
 
 ## 2. Page Map
 
-Eight surfaces total:
+Nine surfaces total:
 
 1. **Landing / Sign-up** — one-click entry
 2. **Onboarding — Deposit**
-3. **Onboarding — Risk Tier + Toggles** — uses the Risk/Reward Map as the primary tier selector
+3. **Onboarding — Choose Strategy** — three strategy cards + a clean risk/return read-out; the Risk/Reward Map appears as a supporting "where it sits" visual
 4. **Dashboard (home)** — the primary recurring screen
-5. **Allocation Drill-Down** — tiered transparency, per-category sub-account balances
+5. **Allocation Drill-Down** — per-category sub-account balances, plus the experimental sleeve at the end
 6. **Manage Funds** — deposit more / withdraw / withdraw all
-7. **Risk Settings** — change tier + category toggles (also reachable as a panel from dashboard)
+7. **Risk Settings** — switch strategy with a before/after preview (also reachable from the dashboard)
 8. **Activity** — read-only log of all on-chain actions, tx-hash linked to explorers
+9. **Help / FAQ** — the longer explanations behind the inline one-liners (the three strategies, the experimental sleeve, and common questions)
 
-Onboarding (2–3) runs once. After that the user lives on the Dashboard and dips into 5/6/7/8 as needed.
+Onboarding (2–3) runs once. After that the user lives on the Dashboard and dips into 5/6/7/8/9 as needed. Explanations are delivered in two layers: **short one-liners inline** at every decision point (deposit, strategy select, switch), and the **full detail in Help/FAQ**.
 
 ---
 
@@ -75,18 +77,19 @@ Components:
 
 Inputs taken: stablecoin choice, amount.
 
-### 3.3 Onboarding — Risk Tier + Toggles
+### 3.3 Onboarding — Choose Strategy
 
-**Purpose:** Set the steering controls before showing the dashboard. This is the user's first encounter with the **Risk/Reward Map**, used here as the primary tier selector — a stronger first impression than a plain control.
+**Purpose:** Pick a strategy before showing the dashboard, with a clean, non-verbose read-out of what it means.
 
 Components:
 
-- **Risk/Reward Map (primary selector)** — the same scatter chart that anchors the dashboard (full spec in 3.4), in selection mode. The user reads the rising frontier and **taps a tier dot** to choose their starting tier. The tapped tier highlights; a "your position" dot snaps to it. (A simple 5-tier segmented control sits beneath as a fallback/accessibility affordance for the same choice.)
-- **Live projected APY** — reacts in real time to *both* the selected tier *and* the category toggles below. Toggling off a category recomputes and re-badges the number immediately. Always badged **"Estimate."**
-- **Category exclude toggles** — switches to turn off whole categories (e.g. "Exclude prediction markets," "Exclude complex yield"). Toggling one live-recomputes the allocation preview *and* the projected return, and shifts the user's dot on the map (excluding high-risk categories pulls the achievable position left/down). If a toggle removes everything a tier needs, show a gentle note ("Aggressive needs at least one growth category").
+- **Three strategy cards (primary selector)** — Stable / Blue-Chip / Growth, each with a one-line tagline, what it holds, its est. APY range, and a risk label. Selecting a card reveals a one-sentence plain-language blurb. This is the main chooser — no toggles, no customization.
+- **Risk/return read-out** — the selected strategy's **live projected APY** (badged **"Estimate"**), its risk label, and a Lower→Higher **risk meter** with a marker. Clean and glanceable.
+- **Risk/Reward Map (supporting)** — the same scatter chart that anchors the dashboard, shown smaller as a "where it sits" visual. Tapping a tier dot also selects it.
+- **"How does <strategy> work?"** inline expander — the fuller explanation, mirrored in Help/FAQ.
 - **"Start earning" button** → 2–3s loader ("Allocating your capital…") → Dashboard
 
-Inputs taken: risk tier, category exclusions.
+Inputs taken: strategy (tier). A footnote notes Prediction Markets are available separately, new & experimental.
 
 ### 3.4 Dashboard (home) — the primary screen
 
@@ -157,9 +160,9 @@ All amounts validated against available balance. Show pending→settled with the
 
 **Purpose:** The living risk control, reachable from the dashboard strip.
 
-- Same 5-tier selector + category toggles as onboarding, pre-filled with current state
-- **Before/after allocation preview** — show how the mix shifts when they change tier or toggles, so the change feels deliberate
-- **"Apply changes"** → 2–3s loader ("Rebalancing…") → back to Dashboard with updated allocation
+- Same three strategy cards as onboarding, pre-filled with the current choice
+- **Before/after allocation preview** — two donuts + a per-holding current-vs-new table, so the switch feels deliberate
+- **"Switch to <strategy>"** → 2–3s loader ("Rebalancing…") → back to Dashboard with updated allocation
 
 ### 3.8 Activity
 
@@ -200,6 +203,8 @@ Everything is automated — the only user inputs across the whole product are: *
 ---
 
 ## 6. Resolved Decisions
+
+> **Redesign note (current):** the product now uses **three strategies** (Stable / Blue-Chip / Growth) on an "own an asset class + earn yield on top" model, with **no category toggles / customization**. Prediction Markets are pulled out as a separate **new & experimental** opt-in sleeve. A **Help/FAQ** surface backs the inline one-liners. The decisions below predate this and are kept for history; where they mention 5 tiers, six categories, or exclusion toggles, the redesign above supersedes them.
 
 These were open assumptions; now locked:
 

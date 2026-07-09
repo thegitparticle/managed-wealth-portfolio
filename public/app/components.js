@@ -1,5 +1,5 @@
 import { html, useState, useEffect, useRef, useCallback } from './lib.js'
-import { CATEGORIES, TIERS, CATEGORY_COLORS, formatUSD, generateOtherUsers, computeProjectedAPY, computeRiskLevel } from './mock-data.js'
+import { CATEGORIES, TIERS, EXPERIMENTAL, CATEGORY_COLORS, formatUSD, generateOtherUsers, computeProjectedAPY, computeRiskLevel } from './mock-data.js'
 
 export function Loader({ message, onDone }) {
   useEffect(() => {
@@ -328,36 +328,92 @@ export function TierSelector({ value, onChange, excludedCategories }) {
   `
 }
 
-export function CategoryToggles({ excludedCategories, onChange, tierId }) {
-  const toggle = (catId) => {
-    if (excludedCategories.includes(catId)) {
-      onChange(excludedCategories.filter(c => c !== catId))
-    } else {
-      const newExcluded = [...excludedCategories, catId]
-      const alloc = TIERS[tierId - 1]
-      onChange(newExcluded)
-    }
-  }
-
+// Horizontal Lower→Higher risk meter with a marker at `level` (0..1).
+export function RiskMeter({ level }) {
+  const pct = Math.max(4, Math.min(96, (level || 0) * 100))
   return html`
-    <div className="category-toggles">
-      ${CATEGORIES.map(cat => {
-        const isExcluded = excludedCategories.includes(cat.id)
+    <div className="risk-meter">
+      <div className="risk-meter-track">
+        <span className="risk-meter-fill" style=${{ width: pct + '%' }}></span>
+        <span className="risk-meter-marker" style=${{ left: pct + '%' }}></span>
+      </div>
+      <div className="risk-meter-ends mono">
+        <span>Lower risk</span><span>Higher risk</span>
+      </div>
+    </div>
+  `
+}
+
+// The three selectable strategy cards — the primary tier chooser.
+export function TierCards({ value, onChange }) {
+  return html`
+    <div className="tier-cards">
+      ${TIERS.map(t => {
+        const active = value === t.id
         return html`
-          <div key=${cat.id} className=${`cat-toggle-row ${isExcluded ? 'cat-excluded' : ''}`}>
-            <div className="cat-toggle-info">
-              <span className="cat-color-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
-              <span className="cat-toggle-name">${cat.name}</span>
+          <button
+            key=${t.id}
+            type="button"
+            className=${`tier-card ${active ? 'tier-card-on' : ''}`}
+            onClick=${() => onChange(t.id)}
+            style=${{ '--tier-color': t.color }}
+          >
+            <span className="tier-card-rail"></span>
+            <div className="tier-card-head">
+              <span className="tier-card-name">${t.name}</span>
+              <span className="tier-risk-pill mono">${t.riskLabel}</span>
             </div>
-            <button
-              className=${`toggle-switch ${isExcluded ? '' : 'toggle-on'}`}
-              onClick=${() => toggle(cat.id)}
-            >
-              <span className="toggle-knob"></span>
-            </button>
-          </div>
+            <div className="tier-card-tag">${t.tagline}</div>
+            <div className="tier-card-holds mono"><span className="muted">HOLDS</span> ${t.holds}</div>
+            <div className="tier-card-apy">
+              <span className="tier-card-apy-num">${t.apyRange[0]}–${t.apyRange[1]}%</span>
+              <span className="tier-card-apy-lbl mono">est. APY</span>
+            </div>
+            ${active && html`<div className="tier-card-blurb">${t.blurb}</div>`}
+          </button>
         `
       })}
+    </div>
+  `
+}
+
+// Clean, non-verbose risk/return read-out for a tier — used in settings & switch.
+export function InlineTierSummary({ tierId }) {
+  const t = TIERS.find(x => x.id === tierId)
+  const apy = computeProjectedAPY(tierId, [])
+  const risk = computeRiskLevel(tierId, [])
+  if (!t) return null
+  return html`
+    <div className="tier-summary">
+      <div className="tier-summary-row">
+        <div>
+          <div className="mono muted micro">PROJECTED APY</div>
+          <div className="tier-summary-apy">${apy.toFixed(1)}% <${EstimateBadge} /></div>
+        </div>
+        <div className="tier-summary-riskcol">
+          <div className="mono muted micro">RISK</div>
+          <div className="tier-summary-risk">${t.riskLabel}</div>
+        </div>
+      </div>
+      <${RiskMeter} level=${risk} />
+      <p className="tier-summary-blurb">${t.blurb}</p>
+    </div>
+  `
+}
+
+// Prediction markets — surfaced separately as a new / experimental sleeve.
+export function ExperimentalCard({ onLearnMore }) {
+  return html`
+    <div className="experimental-card">
+      <div className="experimental-head">
+        <span className="experimental-badge mono">${EXPERIMENTAL.badge}</span>
+        <span className="experimental-name">${EXPERIMENTAL.name}</span>
+      </div>
+      <p className="experimental-desc">${EXPERIMENTAL.description}</p>
+      <div className="experimental-foot">
+        <span className="mono muted micro">Separate from your managed tiers · coming soon</span>
+        ${onLearnMore && html`<button className="button experimental-btn mono" onClick=${onLearnMore}>Learn more</button>`}
+      </div>
     </div>
   `
 }
