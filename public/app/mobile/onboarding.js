@@ -1,9 +1,8 @@
 import { html, useState } from '../lib.js'
-import { RiskRewardMap } from '../components.js'
-import { Segmented, Switch, Card, Button, MLoader, Icon } from './ui.js'
+import { RiskMeter } from '../components.js'
+import { Segmented, Card, Button, MLoader } from './ui.js'
 import {
-  TIERS, CATEGORIES, CATEGORY_COLORS, formatUSD,
-  computeProjectedAPY,
+  TIERS, formatUSD, computeProjectedAPY, computeRiskLevel,
 } from '../mock-data.js'
 
 /* --- Landing --- */
@@ -14,13 +13,13 @@ export function MLanding({ onContinue, onSwitchDevice }) {
         <div className="m-logo-mark">F</div>
         <div className="m-eyebrow">MANAGE WEALTH BY FERE</div>
         <h1 className="m-landing-title">Deposit dollars.<br/>Pick your risk.<br/><span className="m-accent-text">Let the system earn.</span></h1>
-        <p className="m-landing-sub">A single-deposit, AI-allocated portal. Your capital is routed across diversified strategy baskets — you steer with a risk dial.</p>
+        <p className="m-landing-sub">A single-deposit, AI-managed portal. Your money holds an asset class and earns yield on top — you just pick one of three strategies.</p>
       </div>
 
       <div className="m-landing-features">
         ${[
-          ['5 Risk Tiers', 'Preserve (4–8%) to Aggressive (35%+)'],
-          ['AI Allocation', 'Routed across 6 strategy categories'],
+          ['3 Simple Strategies', 'Stable · Blue-Chip · Growth'],
+          ['Yield On Everything', 'Own the asset, earn extra on top'],
           ['Full Transparency', 'Every action logged on-chain'],
         ].map(([t, d]) => html`
           <div key=${t} className="m-feature-row">
@@ -84,69 +83,69 @@ export function MDeposit({ onComplete }) {
   `
 }
 
-/* --- Risk tier (Step 2) --- */
+/* --- Choose strategy (Step 2) --- */
 export function MRiskTier({ onComplete }) {
-  const [tierId, setTierId] = useState(3)
-  const [excluded, setExcluded] = useState([])
+  const [tierId, setTierId] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [showLearn, setShowLearn] = useState(false)
 
-  const projectedApy = computeProjectedAPY(tierId, excluded)
   const tier = TIERS.find(t => t.id === tierId)
-  const activeCount = CATEGORIES.filter(c => !excluded.includes(c.id)).length
-  const needsWarning = activeCount === 0
-
-  const toggleCat = (catId) => {
-    setExcluded(prev => prev.includes(catId) ? prev.filter(c => c !== catId) : [...prev, catId])
-  }
+  const projectedApy = computeProjectedAPY(tierId, [])
+  const risk = computeRiskLevel(tierId, [])
 
   if (loading) {
-    return html`<${MLoader} message="Allocating your capital…" onDone=${() => onComplete(tierId, excluded)} />`
+    return html`<${MLoader} message="Allocating your capital…" onDone=${() => onComplete(tierId, [])} />`
   }
 
   return html`
     <div className="m-flow">
       <div className="m-step-pill">STEP 2 OF 2</div>
-      <h2 className="m-flow-title">Set your risk profile</h2>
-      <p className="m-flow-sub">Tap a tier on the map, then fine-tune below.</p>
+      <h2 className="m-flow-title">Choose your strategy</h2>
+      <p className="m-flow-sub">Each holds different assets and earns yield on top. Change anytime.</p>
 
-      <${Card} className="m-apy-hero">
-        <div className="m-apy-hero-label">PROJECTED APY <span className="m-est">EST</span></div>
-        <div className="m-apy-hero-value">${projectedApy.toFixed(1)}%</div>
-        <div className="m-apy-hero-sub">${tier.name} · ${tier.apyRange[0]}–${tier.apyRange[1]}% range</div>
-      </${Card}>
-
-      <${Card} className="m-map-card">
-        <${RiskRewardMap}
-          tierId=${tierId} excludedCategories=${excluded}
-          onTierClick=${setTierId} mode="select"
-          layers=${{ tiers: true, user: true, others: true, categories: true }}
-        />
-      </${Card}>
-
-      <label className="m-field-label">TIER</label>
-      <div className="m-tier-scroller">
-        ${TIERS.map(t => html`
-          <button key=${t.id} className=${`m-tier-card ${tierId === t.id ? 'm-tier-card-on' : ''}`} onClick=${() => setTierId(t.id)}>
-            <span className="m-tier-card-name">${t.name}</span>
-            <span className="m-tier-card-apy">${t.apyRange[0]}–${t.apyRange[1]}%</span>
-          </button>
-        `)}
+      <div className="m-strat-picker">
+        ${TIERS.map(t => {
+          const active = tierId === t.id
+          return html`
+            <button
+              key=${t.id}
+              type="button"
+              className=${`m-strat-card ${active ? 'm-strat-on' : ''}`}
+              onClick=${() => { setTierId(t.id); setShowLearn(false) }}
+              style=${{ '--tier-color': t.color }}
+            >
+              <span className="m-strat-rail"></span>
+              <div className="m-strat-top">
+                <span className="m-strat-name">${t.name}</span>
+                <span className="m-strat-risk">${t.riskLabel}</span>
+              </div>
+              <div className="m-strat-tag">${t.tagline}</div>
+              <div className="m-strat-line">
+                <span className="m-strat-holds">${t.holds}</span>
+                <span className="m-strat-apy">${t.apyRange[0]}–${t.apyRange[1]}%</span>
+              </div>
+              ${active && html`<div className="m-strat-blurb">${t.blurb}</div>`}
+            </button>
+          `
+        })}
       </div>
 
-      <label className="m-field-label">CATEGORY EXCLUSIONS</label>
-      <${Card} className="m-list">
-        ${CATEGORIES.map((cat, i) => html`
-          <div key=${cat.id} className=${`m-list-row ${i === CATEGORIES.length - 1 ? 'm-list-row-last' : ''}`}>
-            <span className="m-cat-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
-            <span className="m-list-row-name">${cat.name}</span>
-            <${Switch} on=${!excluded.includes(cat.id)} onChange=${() => toggleCat(cat.id)} />
-          </div>
-        `)}
+      <${Card} className="m-apy-hero" style=${{ marginTop: 18 }}>
+        <div className="m-apy-hero-label">${tier.name.toUpperCase()} · PROJECTED APY <span className="m-est">EST</span></div>
+        <div className="m-apy-hero-value">${projectedApy.toFixed(1)}%</div>
+        <div className="m-apy-hero-sub">${tier.riskLabel} risk</div>
+        <div style=${{ marginTop: 12 }}><${RiskMeter} level=${risk} /></div>
       </${Card}>
-      ${needsWarning && html`<div className="m-warn">At least one category must be active.</div>`}
+
+      <button className="m-learn-toggle" onClick=${() => setShowLearn(!showLearn)}>
+        How does ${tier.name} work? <span>${showLearn ? '▲' : '▼'}</span>
+      </button>
+      ${showLearn && html`<${Card} className="m-learn-body">${tier.long}</${Card}>`}
+
+      <p className="m-onboard-note">Prediction Markets (new &amp; experimental) are available separately once you're in.</p>
 
       <div className="m-flow-foot">
-        <${Button} kind="primary" disabled=${needsWarning} onClick=${() => setLoading(true)}>Start earning</${Button}>
+        <${Button} kind="primary" onClick=${() => setLoading(true)}>Start earning</${Button}>
       </div>
     </div>
   `

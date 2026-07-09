@@ -1,8 +1,8 @@
 import { html, useState, useMemo } from '../lib.js'
-import { RiskRewardMap, DonutChart, LineChart } from '../components.js'
-import { Segmented, Switch, Card, Button, MLoader, Sheet, NavBar, Icon } from './ui.js'
+import { RiskRewardMap, DonutChart, LineChart, RiskMeter } from '../components.js'
+import { Segmented, Card, Button, MLoader, Sheet, NavBar, Icon } from './ui.js'
 import {
-  TIERS, CATEGORIES, CATEGORY_COLORS, formatUSD, formatPct,
+  TIERS, CATEGORIES, EXPERIMENTAL, FAQ, CATEGORY_COLORS, formatUSD, formatPct,
   computeProjectedAPY, computeRiskLevel, computeCategoryBalances,
   generateNetWorthSeries, generatePerformanceSeries, generateAnonymizedStrategies,
   getEffectiveAllocation, generateActivityLog,
@@ -10,16 +10,16 @@ import {
 
 /* ===================== Dashboard ===================== */
 export function MDashboard({ state, navigate, onTierSwitch }) {
-  const { deposit, tierId, excludedCategories } = state
+  const { deposit, tierId } = state
   const [timeRange, setTimeRange] = useState('30d')
   const [previewTier, setPreviewTier] = useState(null)
   const [switching, setSwitching] = useState(false)
   const [layers, setLayers] = useState({ tiers: true, user: true, others: true, categories: true })
 
   const tier = TIERS.find(t => t.id === tierId)
-  const projectedApy = computeProjectedAPY(tierId, excludedCategories)
-  const balances = computeCategoryBalances(deposit, tierId, excludedCategories)
-  const alloc = getEffectiveAllocation(tierId, excludedCategories)
+  const projectedApy = computeProjectedAPY(tierId, [])
+  const balances = computeCategoryBalances(deposit, tierId, [])
+  const alloc = getEffectiveAllocation(tierId, [])
 
   const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
   const series = useMemo(() => generateNetWorthSeries(deposit * 0.98, days, projectedApy), [deposit, days, projectedApy])
@@ -38,13 +38,19 @@ export function MDashboard({ state, navigate, onTierSwitch }) {
   }
 
   const previewObj = previewTier ? TIERS.find(t => t.id === previewTier) : null
-  const previewApy = previewTier ? computeProjectedAPY(previewTier, excludedCategories) : null
+  const previewApy = previewTier ? computeProjectedAPY(previewTier, []) : null
+  const previewRisk = previewTier ? computeRiskLevel(previewTier, []) : null
 
   const layerDefs = [['user', 'You'], ['tiers', 'Tiers'], ['others', 'Others'], ['categories', 'Cats']]
 
   return html`
     <div className="m-screen">
-      <${NavBar} title="Portfolio" right=${html`<button className="m-icon-btn" onClick=${() => navigate('risk-settings')}><${Icon.gear} size=${22} /></button>`} />
+      <${NavBar} title="Portfolio" right=${html`
+        <div className="m-nav-actions">
+          <button className="m-icon-btn" onClick=${() => navigate('help')} aria-label="Help"><${Icon.help} size=${22} /></button>
+          <button className="m-icon-btn" onClick=${() => navigate('risk-settings')} aria-label="Risk settings"><${Icon.gear} size=${22} /></button>
+        </div>
+      `} />
 
       <${Card} className="m-hero">
         <div className="m-hero-label">TOTAL NET WORTH</div>
@@ -67,9 +73,9 @@ export function MDashboard({ state, navigate, onTierSwitch }) {
           <div className="m-stat-sub">est. fwd ${projectedApy.toFixed(1)}%</div>
         </${Card}>
         <${Card} className="m-stat">
-          <div className="m-stat-label">RISK TIER</div>
+          <div className="m-stat-label">STRATEGY</div>
           <div className="m-stat-value m-stat-value-sm">${tier.name}</div>
-          <button className="m-stat-link" onClick=${() => navigate('risk-settings')}>Adjust →</button>
+          <button className="m-stat-link" onClick=${() => navigate('risk-settings')}>Change →</button>
         </${Card}>
       </div>
 
@@ -84,7 +90,7 @@ export function MDashboard({ state, navigate, onTierSwitch }) {
           `)}
         </div>
         <${RiskRewardMap}
-          tierId=${tierId} excludedCategories=${excludedCategories}
+          tierId=${tierId} excludedCategories=${[]}
           onTierClick=${(t) => t !== tierId && setPreviewTier(t)} mode="select" layers=${layers}
         />
         <p className="m-map-hint">Tap a tier dot to preview switching.</p>
@@ -106,52 +112,60 @@ export function MDashboard({ state, navigate, onTierSwitch }) {
         </div>
       </${Card}>
 
-      <div className="m-section-head"><span>Active Categories</span></div>
+      <div className="m-section-head"><span>What you hold</span></div>
       <div className="m-cat-list">
-        ${CATEGORIES.map(cat => {
-          const isExcluded = excludedCategories.includes(cat.id)
-          return html`
-            <${Card} key=${cat.id} className=${`m-cat-card ${isExcluded ? 'm-off' : ''}`} onClick=${() => !isExcluded && navigate('allocation')}>
-              <div className="m-cat-card-top">
-                <span className="m-cat-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
-                <span className="m-cat-card-name">${cat.name}</span>
-                ${isExcluded ? html`<span className="m-off-badge">OFF</span>` : html`<${Icon.chevronRight} size=${18} className="m-muted" />`}
-              </div>
-              ${!isExcluded && html`
-                <div className="m-cat-card-stats">
-                  <span><b>${formatUSD(balances[cat.id] || 0)}</b> · ${(alloc[cat.id] || 0).toFixed(0)}%</span>
-                  <span className="m-muted">${cat.strategyCount} strats · ${cat.apy.toFixed(1)}%</span>
-                </div>
-              `}
-            </${Card}>
-          `
-        })}
+        ${CATEGORIES.filter(c => (alloc[c.id] || 0) > 0).map(cat => html`
+          <${Card} key=${cat.id} className="m-cat-card" onClick=${() => navigate('allocation')}>
+            <div className="m-cat-card-top">
+              <span className="m-cat-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
+              <span className="m-cat-card-name">${cat.name}</span>
+              <${Icon.chevronRight} size=${18} className="m-muted" />
+            </div>
+            <div className="m-cat-card-stats">
+              <span><b>${formatUSD(balances[cat.id] || 0)}</b> · ${(alloc[cat.id] || 0).toFixed(0)}%</span>
+              <span className="m-muted">${cat.strategyCount} strats · ${cat.apy.toFixed(1)}%</span>
+            </div>
+          </${Card}>
+        `)}
       </div>
+
+      <div className="m-section-head"><span>Beyond your tiers</span></div>
+      <${Card} className="m-experimental" onClick=${() => navigate('help')}>
+        <div className="m-exp-top">
+          <span className="m-exp-badge">${EXPERIMENTAL.badge}</span>
+          <${Icon.spark} size=${18} className="m-exp-spark" />
+        </div>
+        <div className="m-exp-name">${EXPERIMENTAL.name}</div>
+        <p className="m-exp-desc">${EXPERIMENTAL.description}</p>
+        <div className="m-exp-foot">Separate from your managed tiers · coming soon</div>
+      </${Card}>
 
       <div className="m-quick-actions">
         <button className="m-qa" onClick=${() => navigate('funds')}><span className="m-qa-icon m-qa-green"><${Icon.plus} size=${20} /></span>Add</button>
         <button className="m-qa" onClick=${() => navigate('funds')}><span className="m-qa-icon"><${Icon.arrowDown} size=${20} /></span>Withdraw</button>
         <button className="m-qa" onClick=${() => navigate('risk-settings')}><span className="m-qa-icon m-qa-orange"><${Icon.gear} size=${20} /></span>Risk</button>
-        <button className="m-qa" onClick=${() => navigate('activity')}><span className="m-qa-icon"><${Icon.pulse} size=${20} /></span>Activity</button>
+        <button className="m-qa" onClick=${() => navigate('help')}><span className="m-qa-icon"><${Icon.help} size=${20} /></span>Help</button>
       </div>
 
-      <${Sheet} open=${!!previewTier} onClose=${() => setPreviewTier(null)} title="Switch Tier">
+      <${Sheet} open=${!!previewTier} onClose=${() => setPreviewTier(null)} title="Switch strategy">
         ${previewObj && html`
           <div className="m-tier-compare">
             <div className="m-tier-compare-col">
-              <span className="m-muted">CURRENT</span>
+              <span className="m-muted">NOW</span>
               <span className="m-tier-compare-name">${tier.name}</span>
-              <span className="m-mono">${projectedApy.toFixed(1)}% APY</span>
+              <span className="m-mono">${projectedApy.toFixed(1)}% · ${tier.riskLabel}</span>
             </div>
             <${Icon.chevronRight} size=${22} className="m-accent-text" />
             <div className="m-tier-compare-col">
               <span className="m-muted">NEW</span>
-              <span className="m-tier-compare-name m-accent-text">${previewObj.name}</span>
-              <span className="m-mono">${previewApy.toFixed(1)}% APY</span>
+              <span className="m-tier-compare-name" style=${{ color: previewObj.color }}>${previewObj.name}</span>
+              <span className="m-mono">${previewApy.toFixed(1)}% · ${previewObj.riskLabel}</span>
             </div>
           </div>
+          <p className="m-tier-blurb">${previewObj.blurb}</p>
+          <div style=${{ margin: '2px 0 12px' }}><${RiskMeter} level=${previewRisk} /></div>
           <div className="m-tier-delta">
-            Return ${formatPct(previewApy - projectedApy)} · Risk ${formatPct((computeRiskLevel(previewTier, excludedCategories) - computeRiskLevel(tierId, excludedCategories)) * 100)}
+            Potential return ${formatPct(previewApy - projectedApy)} · Risk ${tier.riskLabel} → ${previewObj.riskLabel}
           </div>
           <${Button} kind="primary" onClick=${() => setSwitching(true)}>Switch to ${previewObj.name}</${Button}>
           <button className="m-text-link" onClick=${() => setPreviewTier(null)}>Cancel</button>
@@ -163,60 +177,73 @@ export function MDashboard({ state, navigate, onTierSwitch }) {
 
 /* ===================== Allocation (drill-down) ===================== */
 export function MAllocation({ state }) {
-  const { deposit, tierId, excludedCategories, tierName } = state
+  const { deposit, tierId, tierName } = state
   const [expanded, setExpanded] = useState(null)
-  const balances = computeCategoryBalances(deposit, tierId, excludedCategories)
+  const balances = computeCategoryBalances(deposit, tierId, [])
+  const alloc = getEffectiveAllocation(tierId, [])
   const total = Object.values(balances).reduce((s, v) => s + v, 0)
+
+  const renderDrill = (cat, { experimental } = {}) => {
+    const balance = balances[cat.id] || 0
+    const pct = total > 0 ? (balance / total * 100) : 0
+    const inactive = !experimental && (alloc[cat.id] || 0) === 0
+    const isOpen = expanded === cat.id
+    const strategies = isOpen ? generateAnonymizedStrategies(cat.id) : []
+    const perf = isOpen ? generatePerformanceSeries(30, cat.apy, 0.3) : []
+    return html`
+      <${Card} key=${cat.id} className=${`m-drill ${inactive ? 'm-off' : ''} ${experimental ? 'm-drill-exp' : ''}`}>
+        <div className="m-drill-head" onClick=${() => !inactive && setExpanded(isOpen ? null : cat.id)}>
+          <span className="m-cat-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
+          <div className="m-drill-head-text">
+            <div className="m-cat-card-name">
+              ${cat.name}
+              ${experimental && html`<span className="m-exp-badge m-exp-badge-inline">${cat.badge}</span>`}
+            </div>
+            <div className="m-muted m-tiny">${cat.description}</div>
+          </div>
+          ${experimental
+            ? html`<span className="m-muted m-tiny">Opt-in</span>`
+            : inactive
+              ? html`<span className="m-off-badge">0%</span>`
+              : html`<div className="m-drill-head-right"><b>${formatUSD(balance)}</b><span className="m-muted m-tiny">${pct.toFixed(1)}%</span></div>`}
+        </div>
+        ${isOpen && !inactive && html`
+          <div className="m-drill-body">
+            <div className="m-drill-stats">
+              <div><span className="m-tiny m-muted">STRATEGIES</span><span className="m-mono">${cat.strategyCount} active</span></div>
+              <div><span className="m-tiny m-muted">BLENDED APY</span><span className="m-mono">${cat.apy.toFixed(1)}%</span></div>
+            </div>
+            <div style=${{ margin: '4px -4px' }}><${LineChart} data=${perf} width=${300} height=${56} color=${CATEGORY_COLORS[cat.id]} /></div>
+            <div className="m-strat-list">
+              ${strategies.map((s, i) => html`
+                <div key=${i} className="m-strat-row">
+                  <span className="m-strat-name">${s.name}</span>
+                  <span className=${s.performance30d >= 0 ? 'm-up' : 'm-down'}>${formatPct(s.performance30d)}</span>
+                  <span className=${`m-strat-status m-strat-${s.status}`}>${s.status}</span>
+                </div>
+              `)}
+            </div>
+          </div>
+        `}
+      </${Card}>
+    `
+  }
 
   return html`
     <div className="m-screen">
       <${NavBar} title="Allocation" />
       <${Card} className="m-info-card">
         <div className="m-stat-label">HOW ALLOCATION WORKS</div>
-        <p className="m-info-text">Your capital is split across per-category sub-accounts based on your tier and toggles. You control the dials; the AI handles strategy routing. Current tier: <strong>${tierName}</strong>.</p>
+        <p className="m-info-text">Your tier decides which assets you hold and how much yield sits on top. The AI handles all strategy routing — you just pick the tier. Current tier: <strong>${tierName}</strong>.</p>
       </${Card}>
 
       <div className="m-cat-list">
-        ${CATEGORIES.map(cat => {
-          const balance = balances[cat.id] || 0
-          const pct = total > 0 ? (balance / total * 100) : 0
-          const isExcluded = excludedCategories.includes(cat.id)
-          const isOpen = expanded === cat.id
-          const strategies = isOpen ? generateAnonymizedStrategies(cat.id) : []
-          const perf = isOpen ? generatePerformanceSeries(30, cat.apy, 0.3) : []
-          return html`
-            <${Card} key=${cat.id} className=${`m-drill ${isExcluded ? 'm-off' : ''}`}>
-              <div className="m-drill-head" onClick=${() => !isExcluded && setExpanded(isOpen ? null : cat.id)}>
-                <span className="m-cat-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
-                <div className="m-drill-head-text">
-                  <div className="m-cat-card-name">${cat.name}</div>
-                  <div className="m-muted m-tiny">${cat.description}</div>
-                </div>
-                ${isExcluded
-                  ? html`<span className="m-off-badge">OFF</span>`
-                  : html`<div className="m-drill-head-right"><b>${formatUSD(balance)}</b><span className="m-muted m-tiny">${pct.toFixed(1)}%</span></div>`}
-              </div>
-              ${isOpen && !isExcluded && html`
-                <div className="m-drill-body">
-                  <div className="m-drill-stats">
-                    <div><span className="m-tiny m-muted">STRATEGIES</span><span className="m-mono">${cat.strategyCount} active</span></div>
-                    <div><span className="m-tiny m-muted">BLENDED APY</span><span className="m-mono">${cat.apy.toFixed(1)}%</span></div>
-                  </div>
-                  <div style=${{ margin: '4px -4px' }}><${LineChart} data=${perf} width=${300} height=${56} color=${CATEGORY_COLORS[cat.id]} /></div>
-                  <div className="m-strat-list">
-                    ${strategies.map((s, i) => html`
-                      <div key=${i} className="m-strat-row">
-                        <span className="m-strat-name">${s.name}</span>
-                        <span className=${s.performance30d >= 0 ? 'm-up' : 'm-down'}>${formatPct(s.performance30d)}</span>
-                        <span className=${`m-strat-status m-strat-${s.status}`}>${s.status}</span>
-                      </div>
-                    `)}
-                  </div>
-                </div>
-              `}
-            </${Card}>
-          `
-        })}
+        ${CATEGORIES.map(cat => renderDrill(cat))}
+      </div>
+
+      <div className="m-section-head"><span>Beyond your tiers</span></div>
+      <div className="m-cat-list">
+        ${renderDrill(EXPERIMENTAL, { experimental: true })}
       </div>
     </div>
   `
@@ -294,63 +321,67 @@ export function MFunds({ state, onDeposit, onWithdraw, onWithdrawAll }) {
 /* ===================== Risk Settings ===================== */
 export function MRiskSettings({ state, navigate, onApply }) {
   const [newTier, setNewTier] = useState(state.tierId)
-  const [newExcluded, setNewExcluded] = useState([...state.excludedCategories])
   const [loading, setLoading] = useState(false)
 
-  const currentApy = computeProjectedAPY(state.tierId, state.excludedCategories)
-  const newApy = computeProjectedAPY(newTier, newExcluded)
-  const hasChanges = newTier !== state.tierId || JSON.stringify([...newExcluded].sort()) !== JSON.stringify([...state.excludedCategories].sort())
-  const currentAlloc = getEffectiveAllocation(state.tierId, state.excludedCategories)
-  const newAlloc = getEffectiveAllocation(newTier, newExcluded)
-  const currentBalances = computeCategoryBalances(state.deposit, state.tierId, state.excludedCategories)
-  const newBalances = computeCategoryBalances(state.deposit, newTier, newExcluded)
-  const activeCount = CATEGORIES.filter(c => !newExcluded.includes(c.id)).length
-  const needsWarning = activeCount === 0
+  const currentApy = computeProjectedAPY(state.tierId, [])
+  const newApy = computeProjectedAPY(newTier, [])
+  const newRisk = computeRiskLevel(newTier, [])
+  const hasChanges = newTier !== state.tierId
+  const currentAlloc = getEffectiveAllocation(state.tierId, [])
+  const newAlloc = getEffectiveAllocation(newTier, [])
+  const currentBalances = computeCategoryBalances(state.deposit, state.tierId, [])
+  const newBalances = computeCategoryBalances(state.deposit, newTier, [])
+  const newTierObj = TIERS.find(t => t.id === newTier)
 
   const currentDonut = CATEGORIES.filter(c => currentBalances[c.id] > 0).map(c => ({ label: c.name, value: currentBalances[c.id], color: CATEGORY_COLORS[c.id] }))
   const newDonut = CATEGORIES.filter(c => newBalances[c.id] > 0).map(c => ({ label: c.name, value: newBalances[c.id], color: CATEGORY_COLORS[c.id] }))
 
-  const toggleCat = (catId) => setNewExcluded(prev => prev.includes(catId) ? prev.filter(c => c !== catId) : [...prev, catId])
-
-  if (loading) return html`<${MLoader} message="Rebalancing…" onDone=${() => { onApply(newTier, newExcluded); navigate('dashboard') }} />`
+  if (loading) return html`<${MLoader} message="Rebalancing…" onDone=${() => { onApply(newTier, []); navigate('dashboard') }} />`
 
   return html`
     <div className="m-screen">
-      <${NavBar} title="Risk Settings" large=${false} onBack=${() => navigate('dashboard')} />
+      <${NavBar} title="Strategy" large=${false} onBack=${() => navigate('dashboard')} />
 
-      <${Card} className="m-apy-hero" style=${{ marginTop: 8 }}>
-        <div className="m-apy-hero-label">PROJECTED APY <span className="m-est">EST</span></div>
-        <div className="m-apy-hero-value">${newApy.toFixed(1)}%</div>
-      </${Card}>
-
-      <label className="m-field-label">TIER</label>
-      <div className="m-tier-scroller">
-        ${TIERS.map(t => html`
-          <button key=${t.id} className=${`m-tier-card ${newTier === t.id ? 'm-tier-card-on' : ''}`} onClick=${() => setNewTier(t.id)}>
-            <span className="m-tier-card-name">${t.name}</span>
-            <span className="m-tier-card-apy">${t.apyRange[0]}–${t.apyRange[1]}%</span>
-          </button>
-        `)}
+      <div className="m-strat-picker" style=${{ marginTop: 8 }}>
+        ${TIERS.map(t => {
+          const active = newTier === t.id
+          return html`
+            <button
+              key=${t.id}
+              type="button"
+              className=${`m-strat-card ${active ? 'm-strat-on' : ''}`}
+              onClick=${() => setNewTier(t.id)}
+              style=${{ '--tier-color': t.color }}
+            >
+              <span className="m-strat-rail"></span>
+              <div className="m-strat-top">
+                <span className="m-strat-name">${t.name}</span>
+                <span className="m-strat-risk">${t.riskLabel}</span>
+              </div>
+              <div className="m-strat-tag">${t.tagline}</div>
+              <div className="m-strat-line">
+                <span className="m-strat-holds">${t.holds}</span>
+                <span className="m-strat-apy">${t.apyRange[0]}–${t.apyRange[1]}%</span>
+              </div>
+              ${active && html`<div className="m-strat-blurb">${t.blurb}</div>`}
+            </button>
+          `
+        })}
       </div>
 
-      <label className="m-field-label">CATEGORY EXCLUSIONS</label>
-      <${Card} className="m-list">
-        ${CATEGORIES.map((cat, i) => html`
-          <div key=${cat.id} className=${`m-list-row ${i === CATEGORIES.length - 1 ? 'm-list-row-last' : ''}`}>
-            <span className="m-cat-dot" style=${{ background: CATEGORY_COLORS[cat.id] }}></span>
-            <span className="m-list-row-name">${cat.name}</span>
-            <${Switch} on=${!newExcluded.includes(cat.id)} onChange=${() => toggleCat(cat.id)} />
-          </div>
-        `)}
+      <${Card} className="m-apy-hero" style=${{ marginTop: 16 }}>
+        <div className="m-apy-hero-label">PROJECTED APY <span className="m-est">EST</span></div>
+        <div className="m-apy-hero-value">${newApy.toFixed(1)}%</div>
+        <div className="m-apy-hero-sub">${newTierObj.riskLabel} risk</div>
+        <div style=${{ marginTop: 12 }}><${RiskMeter} level=${newRisk} /></div>
       </${Card}>
-      ${needsWarning && html`<div className="m-warn">At least one category must be active.</div>`}
 
       <div className="m-section-head"><span>Before / After</span></div>
       <${Card}>
         <div className="m-compare-donuts">
-          <div className="m-compare-col"><span className="m-tiny m-muted">CURRENT</span><${DonutChart} data=${currentDonut} size=${90} innerLabel=${TIERS.find(t => t.id === state.tierId)?.name} /><span className="m-mono m-tiny">${currentApy.toFixed(1)}%</span></div>
+          <div className="m-compare-col"><span className="m-tiny m-muted">NOW</span><${DonutChart} data=${currentDonut} size=${90} innerLabel=${TIERS.find(t => t.id === state.tierId)?.name} /><span className="m-mono m-tiny">${currentApy.toFixed(1)}%</span></div>
           <${Icon.chevronRight} size=${20} className="m-muted" />
-          <div className="m-compare-col"><span className="m-tiny m-muted">NEW</span><${DonutChart} data=${newDonut} size=${90} innerLabel=${TIERS.find(t => t.id === newTier)?.name} /><span className="m-mono m-tiny m-accent-text">${newApy.toFixed(1)}%</span></div>
+          <div className="m-compare-col"><span className="m-tiny m-muted">NEW</span><${DonutChart} data=${newDonut} size=${90} innerLabel=${newTierObj?.name} /><span className="m-mono m-tiny m-accent-text">${newApy.toFixed(1)}%</span></div>
         </div>
         <div className="m-compare-table">
           ${CATEGORIES.map(cat => {
@@ -368,8 +399,70 @@ export function MRiskSettings({ state, navigate, onApply }) {
       </${Card}>
 
       <div className="m-flow-foot">
-        <${Button} kind="primary" disabled=${!hasChanges || needsWarning} onClick=${() => setLoading(true)}>Apply Changes</${Button}>
+        <${Button} kind="primary" disabled=${!hasChanges} onClick=${() => setLoading(true)}>${hasChanges ? `Switch to ${newTierObj.name}` : 'No changes'}</${Button}>
       </div>
+    </div>
+  `
+}
+
+/* ===================== Help / FAQ ===================== */
+export function MHelp({ navigate }) {
+  const [open, setOpen] = useState(0)
+
+  return html`
+    <div className="m-screen">
+      <${NavBar} title="How it works" large=${false} onBack=${() => navigate('dashboard')} />
+
+      <${Card} className="m-info-card" style=${{ marginTop: 8 }}>
+        <p className="m-info-text">You choose one of three strategies. Each one holds a different kind of asset and earns yield on top. You never pick individual strategies — the system routes and rebalances automatically. Switch anytime, no lock-up.</p>
+      </${Card}>
+
+      <div className="m-section-head"><span>The three strategies</span></div>
+      ${TIERS.map(t => {
+        const risk = computeRiskLevel(t.id, [])
+        return html`
+          <${Card} key=${t.id} className="m-help-tier" style=${{ '--tier-color': t.color }}>
+            <span className="m-strat-rail"></span>
+            <div className="m-strat-top">
+              <span className="m-strat-name">${t.name}</span>
+              <span className="m-strat-risk">${t.riskLabel}</span>
+            </div>
+            <div className="m-help-meta">
+              <span><span className="m-muted">HOLDS</span> ${t.holds}</span>
+              <span><span className="m-muted">EST. APY</span> ${t.apyRange[0]}–${t.apyRange[1]}%</span>
+            </div>
+            <${RiskMeter} level=${risk} />
+            <p className="m-help-body">${t.long}</p>
+          </${Card}>
+        `
+      })}
+
+      <div className="m-section-head"><span>Beyond your tiers</span></div>
+      <${Card} className="m-help-tier m-help-exp" style=${{ '--tier-color': '#dc2626' }}>
+        <div className="m-strat-top">
+          <span className="m-strat-name">${EXPERIMENTAL.name}</span>
+          <span className="m-exp-badge m-exp-badge-inline">${EXPERIMENTAL.badge}</span>
+        </div>
+        <p className="m-help-body">${EXPERIMENTAL.long}</p>
+      </${Card}>
+
+      <div className="m-section-head"><span>Questions</span></div>
+      <div className="m-faq">
+        ${FAQ.map((item, i) => {
+          const isOpen = open === i
+          return html`
+            <${Card} key=${i} className=${`m-faq-item ${isOpen ? 'm-faq-open' : ''}`}>
+              <button className="m-faq-q" onClick=${() => setOpen(isOpen ? -1 : i)}>
+                <span>${item.q}</span>
+                <span className="m-faq-chevron">${isOpen ? '−' : '+'}</span>
+              </button>
+              ${isOpen && html`<p className="m-faq-a">${item.a}</p>`}
+            </${Card}>
+          `
+        })}
+      </div>
+
+      <p className="m-help-foot">All figures are estimates · demo data is simulated.</p>
     </div>
   `
 }

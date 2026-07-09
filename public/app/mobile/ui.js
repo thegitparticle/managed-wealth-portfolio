@@ -20,6 +20,8 @@ export const Icon = {
   check: (a) => svg(a, '<path d="M4 12.5 9 17.5 20 6.5"/>'),
   sun: (a) => svg(a, '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19"/>'),
   moon: (a) => svg(a, '<path d="M20 13.5A8 8 0 1 1 10.5 4 6.5 6.5 0 0 0 20 13.5Z"/>'),
+  help: (a) => svg(a, '<circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2.2-2.6 4"/><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none"/>'),
+  spark: (a) => svg(a, '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>'),
 }
 
 function svg(attrs = {}, inner) {

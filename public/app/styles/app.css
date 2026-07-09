@@ -1301,3 +1301,92 @@ html:not(.dark) .card::before {
 }
 .device-option-sub { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
 .device-note { margin-top: 28px; font-size: 0.7rem; }
+
+/* ========================================
+   3-tier redesign — shared + desktop
+   ======================================== */
+
+/* Risk meter (shared desktop + mobile) */
+.risk-meter { width: 100%; }
+.risk-meter-track { position: relative; height: 6px; background: var(--card-border); }
+.risk-meter-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--brand-green) 0%, #eab308 55%, #f97316 100%); }
+.risk-meter-marker { position: absolute; top: 50%; width: 12px; height: 12px; transform: translate(-50%, -50%); background: var(--text); border: 2px solid var(--card-bg); }
+.risk-meter-ends { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.6rem; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; }
+
+.micro { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* Tier cards — primary strategy chooser */
+.tier-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 768px) { .tier-cards { grid-template-columns: 1fr; } }
+.tier-card {
+  position: relative; text-align: left; background: var(--card-bg); border: 1px solid var(--card-border);
+  padding: 16px 16px 16px 20px; cursor: pointer; color: var(--text); font-family: var(--font-sans);
+  transition: all 0.15s; display: flex; flex-direction: column; gap: 8px;
+}
+.tier-card:hover { border-color: var(--tier-color); }
+.tier-card-on { border-color: var(--tier-color); box-shadow: inset 0 0 0 1px var(--tier-color); }
+.tier-card-rail { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tier-color); }
+.tier-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tier-card-name { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.tier-risk-pill { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tier-color); border: 1px solid var(--tier-color); padding: 2px 7px; white-space: nowrap; }
+.tier-card-tag { font-size: 0.82rem; color: var(--muted); line-height: 1.35; }
+.tier-card-holds { font-size: 0.68rem; }
+.tier-card-holds .muted { letter-spacing: 0.1em; margin-right: 4px; }
+.tier-card-apy { display: flex; align-items: baseline; gap: 6px; margin-top: 2px; }
+.tier-card-apy-num { font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem; color: var(--tier-color); }
+.tier-card-apy-lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.tier-card-blurb { font-size: 0.78rem; color: var(--text); line-height: 1.45; border-top: 1px solid var(--card-border); padding-top: 8px; margin-top: 2px; }
+
+/* Onboarding sidebar */
+.selected-tier-name { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; color: var(--tier-color); }
+.tier-summary-row { display: flex; gap: 20px; align-items: flex-start; }
+.tier-summary-riskcol { text-align: right; margin-left: auto; }
+.tier-summary-apy { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--brand-green); }
+.tier-summary-risk { font-size: 1.05rem; font-weight: 600; }
+.tier-summary-blurb { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin: 12px 0 0; }
+
+.learn-toggle {
+  width: 100%; text-align: left; background: transparent; border: none; color: var(--text);
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.75rem; display: flex;
+  justify-content: space-between; align-items: center; padding: 0; letter-spacing: 0.02em;
+}
+.learn-chevron { color: var(--brand-orange); }
+.learn-body { margin: 10px 0 0; font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+.onboard-foot-note { font-size: 0.65rem; text-align: center; margin: 10px 0 0; }
+.map-hint { font-size: 0.65rem; text-align: center; margin: 8px 0 0; }
+.tier-preview-blurb { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin: 10px 0; }
+
+/* Prediction markets — experimental module */
+.experimental-section { margin-top: 8px; margin-bottom: 24px; }
+.experimental-card { position: relative; border: 1px dashed rgba(220, 38, 38, 0.5); background: rgba(220, 38, 38, 0.04); padding: 16px 20px; }
+.experimental-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.experimental-badge { font-size: 0.56rem; letter-spacing: 0.12em; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.55); padding: 2px 7px; }
+.dark .experimental-badge { color: #f87171; border-color: rgba(248, 113, 113, 0.5); }
+.experimental-name { font-size: 1rem; font-weight: 600; }
+.experimental-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin: 0; }
+.experimental-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 12px; flex-wrap: wrap; }
+.experimental-btn { border-color: rgba(220, 38, 38, 0.5); color: #dc2626; }
+.dark .experimental-btn { color: #f87171; }
+.drill-experimental { border-color: rgba(220, 38, 38, 0.35) !important; }
+
+/* Help / FAQ page */
+.help-intro { margin-bottom: 20px; }
+.help-intro p { margin: 0; font-size: 0.9rem; line-height: 1.6; }
+.help-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 8px; }
+@media (max-width: 860px) { .help-tiers { grid-template-columns: 1fr; } }
+.help-tier { position: relative; display: flex; flex-direction: column; gap: 10px; padding-left: 20px; }
+.help-tier-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.help-tier-meta { display: flex; flex-direction: column; gap: 3px; font-family: var(--font-mono); font-size: 0.68rem; }
+.help-tier-meta .muted { letter-spacing: 0.08em; margin-right: 4px; }
+.help-tier-body { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin: 0; }
+.help-experimental { border-color: rgba(220, 38, 38, 0.4); padding-left: 20px; position: relative; }
+.faq-list { display: flex; flex-direction: column; gap: 10px; }
+.faq-item { padding: 0; }
+.faq-q {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: transparent; border: none; color: var(--text); cursor: pointer;
+  font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; text-align: left; padding: 16px 20px;
+}
+.faq-chevron { color: var(--brand-orange); font-size: 1.15rem; line-height: 1; }
+.faq-a { font-size: 0.82rem; color: var(--muted); line-height: 1.6; padding: 0 20px 16px; margin: 0; }
+.help-foot { text-align: center; font-size: 0.65rem; margin: 20px 0 0; }

@@ -2,7 +2,7 @@ import { html, useState, useEffect, useCallback } from '../lib.js'
 import { TIERS } from '../mock-data.js'
 import { Icon } from './ui.js'
 import { MLanding, MDeposit, MRiskTier } from './onboarding.js'
-import { MDashboard, MAllocation, MFunds, MRiskSettings, MActivity } from './screens.js'
+import { MDashboard, MAllocation, MFunds, MRiskSettings, MActivity, MHelp } from './screens.js'
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: Icon.home },
@@ -17,7 +17,7 @@ export function MobileApp({ onSwitchDevice }) {
   const [page, setPage] = useState('landing')
   const [deposit, setDeposit] = useState(0)
   const [stablecoin, setStablecoin] = useState('USDC')
-  const [tierId, setTierId] = useState(3)
+  const [tierId, setTierId] = useState(1)
   const [excludedCategories, setExcludedCategories] = useState([])
 
   // Mobile demo defaults to dark (iOS OLED) — ensure it on mount.
@@ -57,6 +57,7 @@ export function MobileApp({ onSwitchDevice }) {
         ${page === 'funds' && html`<${MFunds} state=${state} onDeposit=${onAddFunds} onWithdraw=${onWithdraw} onWithdrawAll=${onWithdrawAll} />`}
         ${page === 'risk-settings' && html`<${MRiskSettings} state=${state} navigate=${navigate} onApply=${onRiskApply} />`}
         ${page === 'activity' && html`<${MActivity} state=${state} navigate=${navigate} />`}
+        ${page === 'help' && html`<${MHelp} navigate=${navigate} />`}
       </div>
 
       ${showTabBar && html`
